@@ -334,7 +334,7 @@ function __install_mongo_version {
 	systemctl daemon-reload --quiet
 	ynh_systemd_action --service_name=$mongodb_servicename --action=restart --line_match="aiting for connections" --log_path="/var/log/mongodb/$mongodb_servicename.log"	
 	mongosh --quiet  <<EOF
-db.adminCommand('{setFeatureCompatibilityVersion: \"$next_mongo_version\"}')
+db.adminCommand({setFeatureCompatibilityVersion: \"$next_mongo_version\"})
 quit()
 EOF
 }
