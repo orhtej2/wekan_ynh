@@ -326,8 +326,13 @@ function __install_mongo_version {
 		--repo="deb http://repo.mongodb.org/apt/debian $debian/mongodb-org/$next_mongo_version main" \
 		--package="mongodb-org mongodb-org-server mongodb-org-tools mongodb-mongosh" \
 		--key="https://www.mongodb.org/static/pgp/server-$next_mongo_version.asc"
-	
-	ynh_remove_extra_repo --name="$app"
+
+	mongodb_servicename=mongod
+
+	# Make sure MongoDB is started and enabled
+	systemctl enable $mongodb_servicename --quiet
+	systemctl daemon-reload --quiet
+	ynh_systemd_action --service_name=$mongodb_servicename --action=restart --line_match="aiting for connections" --log_path="/var/log/mongodb/$mongodb_servicename.log"	
 }
 
 # Install MongoDB and integrate MongoDB service in YunoHost
