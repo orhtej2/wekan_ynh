@@ -311,6 +311,25 @@ ynh_mongo_remove_db() {
 	ynh_mongo_drop_user --db_user=$db_user --db_name=$db_name
 }
 
+function __upgrade_if_necessary {
+	current_mongo_version=$(mongod --version | grep -oP 'db version v\d+\.\d+\.\d+' | grep -oP '\d+\.\d+\.\d+')
+	if dpkg --compare-versions $current_mongo_version "lt" $next_mongo_version
+	then
+		ynh_print_info --message="Upgrading MongoDB from $current_mongo_version to $next_mongo_version..."
+		__install_mongo_version
+	fi
+}
+
+function __install_mongo_version {
+	debian=$(lsb_release --codename --short)
+	ynh_install_extra_app_dependencies \
+		--repo="deb http://repo.mongodb.org/apt/debian $debian/mongodb-org/$next_mongo_version main" \
+		--package="mongodb-org mongodb-org-server mongodb-org-tools mongodb-mongosh" \
+		--key="https://www.mongodb.org/static/pgp/server-$next_mongo_version.asc"
+	
+	ynh_remove_extra_repo --name="$app"
+}
+
 # Install MongoDB and integrate MongoDB service in YunoHost
 #
 # usage: ynh_install_mongo [--mongo_version=mongo_version]
@@ -329,6 +348,24 @@ ynh_install_mongo() {
 	debian=$(lsb_release --codename --short)
 
 	ynh_print_info --message="Installing MongoDB Community Edition..."
+	if command -v mongod &> /dev/null
+	then
+		ynh_print_info --message="MongoDB is already installed, upgrading to version $mongo_version if necessary..."
+	    # mongodb installed, check upgrade steps
+		next_mongo_version=5.0
+		if dpkg --compare-versions $mongo_version "gt" $next_mongo_version
+		then
+			__upgrade_if_necessary
+		fi
+		next_mongo_version=6.0
+		if dpkg --compare-versions $mongo_version "gt" $next_mongo_version
+		then
+			__upgrade_if_necessary
+		fi
+	fi
+
+	ynh_print_info --message="Finalizing MongoDB $mongo_version..."
+
 	ynh_install_extra_app_dependencies \
 		--repo="deb http://repo.mongodb.org/apt/debian $debian/mongodb-org/$mongo_version main" \
 		--package="mongodb-org mongodb-org-server mongodb-org-tools mongodb-mongosh" \
