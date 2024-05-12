@@ -333,7 +333,10 @@ function __install_mongo_version {
 	systemctl enable $mongodb_servicename --quiet
 	systemctl daemon-reload --quiet
 	ynh_systemd_action --service_name=$mongodb_servicename --action=restart --line_match="aiting for connections" --log_path="/var/log/mongodb/$mongodb_servicename.log"	
-	ynh_mongo_exec --command="db.adminCommand('{setFeatureCompatibilityVersion: \"$next_mongo_version\"}')"
+	mongosh --quiet  <<EOF
+db.adminCommand('{setFeatureCompatibilityVersion: \"$next_mongo_version\"}')
+quit()
+EOF
 }
 
 # Install MongoDB and integrate MongoDB service in YunoHost
